@@ -30,7 +30,7 @@ class ClientServer:
         self.processor = OtsuProcessor()
         
         # Crear directorio para guardar imágenes procesadas localmente
-        self.local_output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'processed_images')
+        self.local_output_dir = os.path.join(os.getcwd(), 'processed_images')
         ImageUtils.ensure_directory_exists(self.local_output_dir)
     
     def get_server_images(self):

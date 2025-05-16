@@ -2,6 +2,8 @@ import os
 from flask import Flask, request, render_template, jsonify, send_from_directory, url_for
 from werkzeug.utils import secure_filename
 import uuid
+import cv2
+import numpy as np
 
 app = Flask(__name__)
 
@@ -100,6 +102,46 @@ def save_processed():
         })
     
     return jsonify({'error': 'Tipo de archivo no permitido'}), 400
+
+@app.route('/processed', methods=['POST'])
+def processed():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No se encontró ningún archivo'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No se seleccionó ningún archivo'}), 400
+
+    if file and allowed_file(file.filename):
+        original_filename = secure_filename(file.filename)
+        processed_filename = f"otsu_{original_filename}"
+        output_path = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
+
+        # Leer imagen desde el archivo directamente (sin guardarla)
+        file_bytes = file.read()
+        np_array = np.frombuffer(file_bytes, np.uint8)
+        img = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
+
+        if img is None:
+            return jsonify({'error': 'No se pudo leer la imagen'}), 400
+
+        # Aplicar algoritmo Otsu
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        _, otsu_img = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # Guardar resultado directamente en PROCESSED_FOLDER
+        cv2.imwrite(output_path, otsu_img)
+
+        # Retornar resultado
+        image_url = url_for('static', filename=f'processed/{processed_filename}')
+        return jsonify({
+            'message': 'Imagen procesada guardada correctamente',
+            'filename': processed_filename,
+            'url': image_url
+        })
+
+    return jsonify({'error': 'Tipo de archivo no permitido'}), 400
+
 
 @app.route('/images')
 def list_images():

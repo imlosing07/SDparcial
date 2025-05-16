@@ -7,7 +7,7 @@ from send_to_server import ClientServer
 
 def print_header(text):
     """Imprime un encabezado con formato"""
-    print("\n" + "=" * 60)
+    print("\033[2J\033[H")
     print(f" {text}")
     print("=" * 60)
 
@@ -19,7 +19,7 @@ def main():
                         help='URL del servidor (ej: http://localhost:5000 o https://usuario.pythonanywhere.com)')
     parser.add_argument('--open-browser', action='store_true',
                         help='Abrir el navegador con la interfaz web del servidor')
-    
+
     args = parser.parse_args()
     
     # Inicializar el cliente
